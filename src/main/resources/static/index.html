@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat App</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .chat-container {
+            width: 400px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+
+        .chat-box {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .message {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 8px;
+            max-width: 70%;
+        }
+
+        .sent {
+            background: #d1e7ff;
+            margin-left: auto;
+        }
+
+        .received {
+            background: #e2e2e2;
+            margin-right: auto;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <h3>💬 Chat App (Secure)</h3>
+
+    <!-- LOGIN -->
+    <input id="loginUsername" placeholder="Username">
+    <input id="loginPassword" placeholder="Password">
+    <button onclick="login()">Login</button>
+
+    <hr>
+
+    <!-- CHAT -->
+    <input id="receiver" placeholder="Receiver Name">
+    <button onclick="connect()">Connect</button>
+
+    <div id="chatBox" class="chat-box"></div>
+
+    <input id="message" placeholder="Type message...">
+    <button onclick="sendMessage()">Send</button>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+<script>
+    let stompClient = null;
+    let username = "";
+    let receiver = "";
+
+    // 🔐 LOGIN
+    function login() {
+
+        let u = document.getElementById("loginUsername").value;
+        let p = document.getElementById("loginPassword").value;
+
+        fetch("/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username: u, password: p })
+        })
+        .then(res => res.text())
+        .then(token => {
+            localStorage.setItem("token", token);
+            username = u;
+            alert("✅ Login Success");
+        })
+        .catch(err => console.error(err));
+    }
+
+    // 🔌 CONNECT
+    function connect() {
+
+        receiver = document.getElementById("receiver").value;
+        let token = localStorage.getItem("token");
+
+        if (!token) {
+            alert("Login first!");
+            return;
+        }
+
+        // ✅ Disconnect previous connection (IMPORTANT FIX)
+        if (stompClient !== null) {
+            stompClient.disconnect(() => {
+                console.log("Disconnected old connection");
+            });
+        }
+
+        // ✅ Clear chat UI before loading new
+        document.getElementById("chatBox").innerHTML = "";
+
+        // 📜 Load history
+        loadChatHistory();
+
+        let socket = new SockJS('/ws?token=' + token);
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+
+            console.log("Connected securely as " + username);
+
+            // ✅ Subscribe ONLY ONCE
+            stompClient.subscribe('/user/queue/messages', function (msg) {
+                showMessage(JSON.parse(msg.body));
+            });
+        });
+    }
+
+    // 📜 LOAD HISTORY
+    function loadChatHistory() {
+
+        let token = localStorage.getItem("token");
+
+        fetch(`/chat/history?user1=${username}&user2=${receiver}`, {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        })
+        .then(res => res.json())
+        .then(messages => {
+
+            let chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = "";
+
+            messages.forEach(msg => showMessage(msg));
+        })
+        .catch(err => console.error("History error:", err));
+    }
+
+    // 📤 SEND MESSAGE
+    function sendMessage() {
+
+        let msg = document.getElementById("message").value;
+
+        if (!msg.trim()) return;
+
+        let chatMessage = {
+            receiver: receiver,
+            message: msg
+        };
+
+        // ✅ ONLY send to backend (no UI rendering here)
+        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+
+        document.getElementById("message").value = "";
+    }
+
+    // 💬 SHOW MESSAGE
+    function showMessage(message) {
+
+        let chatBox = document.getElementById("chatBox");
+
+        let div = document.createElement("div");
+        div.classList.add("message");
+
+        if (message.sender === username) {
+            div.classList.add("sent");
+            div.innerHTML = "<b>You:</b> " + message.message;
+        } else {
+            div.classList.add("received");
+            div.innerHTML = "<b>" + message.sender + ":</b> " + message.message;
+        }
+
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
