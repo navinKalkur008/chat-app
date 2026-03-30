@@ -92,7 +92,7 @@
         let u = document.getElementById("loginUsername").value;
         let p = document.getElementById("loginPassword").value;
 
-        fetch("/auth/login", {
+        fetch("https://chat-app-jdaj.onrender.com/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -132,7 +132,7 @@
         // 📜 Load history
         loadChatHistory();
 
-        let socket = new SockJS('/ws?token=' + token);
+        let socket = new SockJS('https://chat-app-jdaj.onrender.com/ws?token=' + token);
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function () {
@@ -151,7 +151,7 @@
 
         let token = localStorage.getItem("token");
 
-        fetch(`/chat/history?user1=${username}&user2=${receiver}`, {
+        fetch(`https://chat-app-jdaj.onrender.com/chat/history?user1=${username}&user2=${receiver}`, {
             headers: {
                 "Authorization": "Bearer " + token
             }
