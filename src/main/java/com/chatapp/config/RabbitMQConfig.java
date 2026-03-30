@@ -11,7 +11,7 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+//@Configuration
 public class RabbitMQConfig {
 
     public static final String QUEUE = "chat_queue";
@@ -54,23 +54,23 @@ public class RabbitMQConfig {
         return new org.springframework.amqp.rabbit.core.RabbitAdmin(connectionFactory);
     }
 
-    @Bean
-    public org.springframework.boot.CommandLineRunner runner(
-            org.springframework.amqp.rabbit.core.RabbitAdmin rabbitAdmin,
-            Queue queue,
-            TopicExchange exchange,
-            Binding binding) {
-
-        return args -> {
-            System.out.println("🔥 Declaring RabbitMQ components...");
-
-            rabbitAdmin.declareQueue(queue);
-            rabbitAdmin.declareExchange(exchange);
-            rabbitAdmin.declareBinding(binding);
-
-            System.out.println("✅ Queue, Exchange, Binding declared");
-        };
-    }
+//    @Bean
+//    public org.springframework.boot.CommandLineRunner runner(
+//            org.springframework.amqp.rabbit.core.RabbitAdmin rabbitAdmin,
+//            Queue queue,
+//            TopicExchange exchange,
+//            Binding binding) {
+//
+//        return args -> {
+//            System.out.println("🔥 Declaring RabbitMQ components...");
+//
+//            rabbitAdmin.declareQueue(queue);
+//            rabbitAdmin.declareExchange(exchange);
+//            rabbitAdmin.declareBinding(binding);
+//
+//            System.out.println("✅ Queue, Exchange, Binding declared");
+//        };
+//    }
 
     @Bean
     public Queue queue(){
