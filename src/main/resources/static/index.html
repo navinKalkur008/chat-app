@@ -86,13 +86,14 @@
     let username = "";
     let receiver = "";
 
+    const BASE_URL = "https://chat-app-jdaj.onrender.com";
+
     // 🔐 LOGIN
     function login() {
-
         let u = document.getElementById("loginUsername").value;
         let p = document.getElementById("loginPassword").value;
 
-        fetch("https://chat-app-jdaj.onrender.com/auth/login", {
+        fetch(BASE_URL + "/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -119,29 +120,32 @@
             return;
         }
 
-        // ✅ Disconnect previous connection (IMPORTANT FIX)
+        // ✅ Disconnect old connection
         if (stompClient !== null) {
-            stompClient.disconnect(() => {
-                console.log("Disconnected old connection");
-            });
+            stompClient.disconnect();
         }
 
-        // ✅ Clear chat UI before loading new
+        // ✅ Clear UI
         document.getElementById("chatBox").innerHTML = "";
 
         // 📜 Load history
         loadChatHistory();
 
-        let socket = new SockJS('https://chat-app-jdaj.onrender.com/ws?token=' + token);
+        let socket = new SockJS(BASE_URL + "/ws?token=" + token);
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function () {
 
-            console.log("Connected securely as " + username);
+            console.log("Connected as " + username);
 
-            // ✅ Subscribe ONLY ONCE
+            // ✅ Single subscription only
             stompClient.subscribe('/user/queue/messages', function (msg) {
-                showMessage(JSON.parse(msg.body));
+                let message = JSON.parse(msg.body);
+
+                // 🚨 IMPORTANT: Avoid duplicate self-message
+                if (message.sender !== username) {
+                    showMessage(message);
+                }
             });
         });
     }
@@ -151,20 +155,18 @@
 
         let token = localStorage.getItem("token");
 
-        fetch(`https://chat-app-jdaj.onrender.com/chat/history?user1=${username}&user2=${receiver}`, {
+        fetch(`${BASE_URL}/chat/history?user1=${username}&user2=${receiver}`, {
             headers: {
                 "Authorization": "Bearer " + token
             }
         })
         .then(res => res.json())
         .then(messages => {
-
             let chatBox = document.getElementById("chatBox");
             chatBox.innerHTML = "";
 
             messages.forEach(msg => showMessage(msg));
-        })
-        .catch(err => console.error("History error:", err));
+        });
     }
 
     // 📤 SEND MESSAGE
@@ -179,8 +181,14 @@
             message: msg
         };
 
-        // ✅ ONLY send to backend (no UI rendering here)
+        // ✅ Send to backend only
         stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+
+        // ✅ Show instantly ONLY once
+        showMessage({
+            sender: username,
+            message: msg
+        });
 
         document.getElementById("message").value = "";
     }
