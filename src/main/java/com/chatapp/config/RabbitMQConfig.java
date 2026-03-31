@@ -11,7 +11,7 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-//@Configuration
+@Configuration
 public class RabbitMQConfig {
 
     public static final String QUEUE = "chat_queue";
@@ -75,7 +75,7 @@ public class RabbitMQConfig {
     @Bean
     public Queue queue(){
         System.out.println("🔥 Queue Bean Created");
-       return new Queue(QUEUE);
+       return new Queue(QUEUE, true);
     }
 
     @Bean
