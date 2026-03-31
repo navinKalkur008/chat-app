@@ -30,11 +30,11 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             System.out.println("🔥 WebSocket Token: " + token);
 
             if (token != null) {
-                String username = jwtUtil.extractUsername(token);
+//                String username = jwtUtil.extractUsername(token);
+//
+//                System.out.println("✅ WebSocket User: " + username);
 
-                System.out.println("✅ WebSocket User: " + username);
-
-                attributes.put("username", username); // ✅ IMPORTANT
+                attributes.put("token", token); // ✅ IMPORTANT
             }
         }
 
