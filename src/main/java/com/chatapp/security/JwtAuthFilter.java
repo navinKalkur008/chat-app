@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 
 @Component
@@ -30,43 +31,35 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        String token  = null;
+        String token = null;
         String username = null;
 
-        // Check if header exists and starts with Bearer
+        // ✅ Case 1: From Header (REST APIs)
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
+        }
 
-            try {
+        // ✅ Case 2: From Query Param (WebSocket)
+        if (token == null && request.getParameter("token") != null) {
+            token = request.getParameter("token");
+            System.out.println("🔥 Token from WS: " + token);
+        }
 
-                username = jwtUtil.extractUsername(token);
-                System.out.println("✅ Valid Token for user: " + username);
-
-            } catch (Exception e) {
-                System.out.println("❌ Invalid Token");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
+        if (token != null) {
+            username = jwtUtil.extractUsername(token);
+            System.out.println("✅ Extracted username: " + username);
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            if (jwtUtil.validateToken(token, username)) {
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
 
-                UsernamePasswordAuthenticationToken autehtication =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                null,
-                                Collections.emptyList()
-                        );
-
-                autehtication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(autehtication);
-            }
-
+            SecurityContextHolder.getContext().setAuthentication(authToken);
         }
-        System.out.println("Auth header: " + authHeader);
-        System.out.println("Extracted username: " + username);
+
         filterChain.doFilter(request, response);
     }
+
 }
+
