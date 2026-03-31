@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 public class MessageConsumer {
 
     private final SimpMessagingTemplate messagingTemplate;
-
     private final ChatService chatService;
 
     public MessageConsumer(SimpMessagingTemplate messagingTemplate, ChatService chatService) {

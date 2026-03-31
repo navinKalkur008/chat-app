@@ -13,22 +13,13 @@ import java.security.Principal;
 public class ChatWebSocketController {
 
     private final MessageProducer producer;
-    private final SimpMessagingTemplate messagingTemplate;
 
-    public ChatWebSocketController(MessageProducer producer, SimpMessagingTemplate messagingTemplate) {
+    public ChatWebSocketController(MessageProducer producer) {
         this.producer = producer;
-        this.messagingTemplate = messagingTemplate;
     }
 
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(ChatMessage message, Principal principal){
-
-//        //Take Sender from JWT Not from UI
-//        message.setSender(principal.getName());
-//
-//        System.out.println("✅ Sender from JWT: " + principal.getName());
-//
-//        producer.sendMessage(message);
 
         // ✅ Always take sender from JWT (secure)
         String sender = principal.getName();
@@ -39,18 +30,18 @@ public class ChatWebSocketController {
         // ✅ Send to RabbitMQ (for persistence)
         producer.sendMessage(message);
 
-        // ✅ Send to RECEIVER
-        messagingTemplate.convertAndSendToUser(
-                message.getReceiver(),
-                "/queue/messages",
-                message
-        );
-
-        // ✅ Send back to SENDER (so you see your own message instantly)
-        messagingTemplate.convertAndSendToUser(
-                sender,
-                "/queue/messages",
-                message
-        );
+//        // ✅ Send to RECEIVER
+//        messagingTemplate.convertAndSendToUser(
+//                message.getReceiver(),
+//                "/queue/messages",
+//                message
+//        );
+//
+//        // ✅ Send back to SENDER (so you see your own message instantly)
+//        messagingTemplate.convertAndSendToUser(
+//                sender,
+//                "/queue/messages",
+//                message
+//        );
     }
 }
